@@ -8,7 +8,7 @@ import { db } from "../../firebase/firebase"
 import { useNavigate } from "react-router-dom"
 import { doSignInWithGoogle } from "../../firebase/auth"
 
-const MarketingManagerRegister = () => {
+const SalesManagerRegister = () => {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -20,34 +20,19 @@ const MarketingManagerRegister = () => {
 
   const saveUserData = async (user, name, phone, email) => {
     try {
-      await setDoc(doc(db, "marketingManager", user.uid), {
+      await setDoc(doc(db, "salesManager", user.uid), {
         name: name || user.displayName || "Unknown",
         email: email || user.email,
         phone: phone || "",
-        role: "Marketing Manager",
+        role: "Sales Manager",
         uid: user.uid,
         createdAt: new Date().toISOString(),
       })
-      console.log("Marketing Manager registered successfully:", user)
-      navigate("/addnewlead")
+      console.log("Sales Manager registered successfully:", user)
+      navigate("/viewpipeline")
     } catch (error) {
       console.error("Error saving user data:", error.message)
       setError("Error saving user data. Please try again.")
-    }
-  }
-
-  const handleGoogleSignup = async () => {
-    setError("")
-    setGoogleLoading(true)
-    try {
-      const result = await doSignInWithGoogle()
-      const user = result.user
-      await saveUserData(user, name, phone, user.email)
-    } catch (error) {
-      console.error("Error signing up with Google:", error.message)
-      setError(error.message || "Failed to sign up with Google. Please try again.")
-    } finally {
-      setGoogleLoading(false)
     }
   }
 
@@ -80,11 +65,26 @@ const MarketingManagerRegister = () => {
     }
   }
 
+  const handleGoogleSignup = async () => {
+    setError("")
+    setGoogleLoading(true)
+    try {
+      const result = await doSignInWithGoogle()
+      const user = result.user
+      await saveUserData(user, name, phone, user.email)
+    } catch (error) {
+      console.error("Error signing up with Google:", error.message)
+      setError(error.message || "Failed to sign up with Google. Please try again.")
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-2">Marketing Manager Register</h1>
-        <p className="text-gray-600 text-center mb-6">Create your Marketing Manager account</p>
+        <h1 className="text-2xl font-bold text-center mb-2">Sales Manager Register</h1>
+        <p className="text-gray-600 text-center mb-6">Create your Sales Manager account</p>
 
         {error && <p className="text-red-500 text-sm mb-4 p-3 bg-red-50 border border-red-200 rounded">{error}</p>}
 
@@ -139,7 +139,7 @@ const MarketingManagerRegister = () => {
               placeholder="Enter your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
@@ -155,7 +155,7 @@ const MarketingManagerRegister = () => {
               placeholder="Enter your phone number"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -169,7 +169,7 @@ const MarketingManagerRegister = () => {
               placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
@@ -185,7 +185,7 @@ const MarketingManagerRegister = () => {
               placeholder="Create a strong password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
               minLength={6}
             />
@@ -194,7 +194,7 @@ const MarketingManagerRegister = () => {
           <button
             type="submit"
             disabled={loading || googleLoading}
-            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
@@ -205,7 +205,7 @@ const MarketingManagerRegister = () => {
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
-              className="text-green-600 hover:text-green-800 font-medium"
+              className="text-blue-600 hover:text-blue-800 font-medium"
               disabled={loading || googleLoading}
             >
               Sign in here
@@ -217,4 +217,4 @@ const MarketingManagerRegister = () => {
   )
 }
 
-export default MarketingManagerRegister
+export default SalesManagerRegister
