@@ -120,7 +120,7 @@ const Header = () => {
                   {userData?.name || authUser.displayName || authUser.email || "User"}
                 </span>
                 {userData?.role && <span className="text-xs text-gray-600">{userData.role}</span>}
-                {userData?.companyName && <span className="text-xs text-gray-500">{userData.companyName}</span>}
+                {/* {userData?.companyName && <span className="text-xs text-gray-500">{userData.companyName}</span>} */}
               </div>
             ) : (
               "Guest"

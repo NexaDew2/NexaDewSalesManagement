@@ -31,6 +31,21 @@ const Home = () => {
     };
 
     // Filter leads based on time period
+    /**
+     * Filters the leads array based on the selected time period (Daily, Weekly, or Monthly).
+     * Only includes leads whose `createdAt` date falls within the specified time range from the current date.
+     *
+     * @function
+     * @returns {Array<Object>} An array of lead objects filtered by the selected time period.
+     *
+     * @example
+     * // Returns leads created within the last 7 days if timePeriod is 'Weekly'
+     * const recentLeads = getFilteredLeads();
+     *
+     * @remarks
+     * - The `timePeriod` variable should be one of: 'Daily', 'Weekly', or 'Monthly'.
+     * - Each lead object is expected to have a `createdAt` property in a format parseable by `Date`.
+     */
     const getFilteredLeads = () => {
         const now = new Date();
         const timeRanges = {
@@ -41,7 +56,7 @@ const Home = () => {
         const timeRange = timeRanges[timePeriod];
 
         return leads.filter((lead) => {
-            const createdAt = new Date(lead.createdAt); // Assumes createdAt is a Firebase Timestamp or ISO string
+            const createdAt = new Date(lead.createdAt); 
             return now - createdAt <= timeRange;
         });
     };

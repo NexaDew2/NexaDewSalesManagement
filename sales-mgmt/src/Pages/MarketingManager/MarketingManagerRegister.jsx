@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { auth } from "../../firebase/firebase"
-import { setDoc, doc } from "firebase/firestore"
+import { setDoc, doc, collection, query, where, getDocs } from "firebase/firestore"
 import { db } from "../../firebase/firebase"
 import { useNavigate } from "react-router-dom"
 import { doSignInWithGoogle } from "../../firebase/auth"
@@ -13,17 +13,36 @@ const MarketingManagerRegister = () => {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
+  const [companyName, setCompanyName] = useState("") // New state for company name
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
 
-  const saveUserData = async (user, name, phone, email) => {
+  // Function to check if the company exists in companyOwner collection
+  const checkCompanyExists = async (companyName) => {
+    try {
+      const companyQuery = query(
+        collection(db, "companyOwner"),
+        where("companyName", "==", companyName)
+      )
+      console.log(companyName)
+      const querySnapshot = await getDocs(companyQuery)
+      return !querySnapshot.empty // Returns true if company exists
+    } catch (error) {
+      console.error("Error checking company:", error.message)
+      setError("Error verifying company. Please try again.")
+      return false
+    }
+  }
+
+  const saveUserData = async (user, name, phone, email, companyName) => {
     try {
       await setDoc(doc(db, "marketingManager", user.uid), {
         name: name || user.displayName || "Unknown",
         email: email || user.email,
         phone: phone || "",
+        companyName: companyName, // Save company name
         role: "Marketing Manager",
         uid: user.uid,
         createdAt: new Date().toISOString(),
@@ -40,9 +59,17 @@ const MarketingManagerRegister = () => {
     setError("")
     setGoogleLoading(true)
     try {
+      // Check if company exists
+      const companyExists = await checkCompanyExists(companyName)
+      if (!companyExists) {
+        setError("Company not found. An owner must register this company first.")
+        setGoogleLoading(false)
+        return
+      }
+
       const result = await doSignInWithGoogle()
       const user = result.user
-      await saveUserData(user, name, phone, user.email)
+      await saveUserData(user, name, phone, user.email, companyName)
     } catch (error) {
       console.error("Error signing up with Google:", error.message)
       setError(error.message || "Failed to sign up with Google. Please try again.")
@@ -56,16 +83,24 @@ const MarketingManagerRegister = () => {
     setError("")
     setLoading(true)
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !companyName) {
       setError("Please fill in all required fields.")
       setLoading(false)
       return
     }
 
     try {
+      // Check if company exists
+      const companyExists = await checkCompanyExists(companyName)
+      if (!companyExists) {
+        setError("Company not found. An owner must register this company first.")
+        setLoading(false)
+        return
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
-      await saveUserData(user, name, phone, email)
+      await saveUserData(user, name, phone, email, companyName)
     } catch (error) {
       console.error("Error registering user:", error.message)
       if (error.code === "auth/email-already-in-use") {
@@ -111,7 +146,7 @@ const MarketingManagerRegister = () => {
               />
               <path
                 fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.30-4.53 6.16-4.53z"
               />
             </svg>
             {googleLoading ? "Creating Account..." : "Continue with Google"}
@@ -128,6 +163,22 @@ const MarketingManagerRegister = () => {
         </div>
 
         <form onSubmit={handleEmailPasswordSignup} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+              Company Name *
+            </label>
+            <input
+              type="text"
+              name="companyName"
+              id="companyName"
+              placeholder="Enter your company name"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              required
+            />
+          </div>
+
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Full Name *

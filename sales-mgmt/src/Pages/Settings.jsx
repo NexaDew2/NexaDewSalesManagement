@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header';
 import { db } from '../firebase/firebase';
-import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, updateDoc, where } from 'firebase/firestore';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('Business Info'); // Default to Employee Details
@@ -17,29 +17,53 @@ const Settings = () => {
   }, []);
 
   const fetchEmployees = async () => {
-    try {
-      const collections = ["companyOwner", "marketingManager", "salesManager"];
-      let allEmployees = [];
-
-      // Fetch data from each collection
-      for (const collectionName of collections) {
-        const q = query(collection(db, collectionName), orderBy("name", "asc"));
-        const querySnapshot = await getDocs(q);
-        const employeesData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          collection: collectionName, 
-          ...doc.data(),
-        }));
-        allEmployees = [...allEmployees, ...employeesData];
-      }
-
-      setEmployees(allEmployees);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-    } finally {
-      setLoading(false);
+  try {
+    // Get current logged-in user ID
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.warn("User not authenticated.");
+      return;
     }
-  };
+
+    // Step 1: Get the companyName of the current Company Owner
+    const ownerSnapshot = await getDocs(
+      query(collection(db, "companyOwner"), where("email", "==", currentUser.email))
+    );
+
+    if (ownerSnapshot.empty) {
+      console.warn("Company Owner not found.");
+      return;
+    }
+
+    const ownerData = ownerSnapshot.docs[0].data();
+    const companyName = ownerData.companyName;
+
+    const collections = ["companyOwner", "marketingManager", "salesManager"];
+    let allEmployees = [];
+
+    // Step 2: Fetch employees from all collections where companyName matches
+    for (const collectionName of collections) {
+      const q = query(
+        collection(db, collectionName),
+        where("companyName", "==", companyName),
+        // orderBy("name", "asc")
+      );
+      const querySnapshot = await getDocs(q);
+      const employeesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        collection: collectionName,
+        ...doc.data(),
+      }));
+      allEmployees = [...allEmployees, ...employeesData];
+    }
+
+    setEmployees(allEmployees);
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleEditClick = (employee) => {
     setEditingEmployeeId(employee.id);

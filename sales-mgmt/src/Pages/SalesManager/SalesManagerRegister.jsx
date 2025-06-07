@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { auth } from "../../firebase/firebase"
-import { setDoc, doc } from "firebase/firestore"
+import { setDoc, doc, query, collection, where, getDocs } from "firebase/firestore"
 import { db } from "../../firebase/firebase"
 import { useNavigate } from "react-router-dom"
 import { doSignInWithGoogle } from "../../firebase/auth"
@@ -13,17 +13,45 @@ const SalesManagerRegister = () => {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
+  const [companyName, setCompanyName] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const navigate = useNavigate()
 
-  const saveUserData = async (user, name, phone, email) => {
+  // Function to check if the company exists in companyOwner collection
+  const checkCompanyExists = async (companyName) => {
+    console.log("Checking company:", companyName)
+    try {
+      const normalizedCompanyName = companyName.toLowerCase() // Normalize to lowercase for case-insensitive matching
+      const companyQuery = query(
+        collection(db, "companyOwner"),
+        where("companyName", "==", normalizedCompanyName)
+      )
+      const querySnapshot = await getDocs(companyQuery) // Use getDocs instead of getDoc
+      if (querySnapshot.empty) {
+        setError("Company not found. An owner must register this company first.")
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error("Error checking company:", error.message)
+      if (error.code === "permission-denied") {
+        setError("Permission denied. Please contact support to verify company access.")
+      } else {
+        setError("Error verifying company. Please try again later.")
+      }
+      return false
+    }
+  }
+
+  const saveUserData = async (user, name, phone, email, companyName) => {
     try {
       await setDoc(doc(db, "salesManager", user.uid), {
         name: name || user.displayName || "Unknown",
         email: email || user.email,
         phone: phone || "",
+        companyName: companyName.toLowerCase(), // Save company name in lowercase
         role: "Sales Manager",
         uid: user.uid,
         createdAt: new Date().toISOString(),
@@ -36,21 +64,48 @@ const SalesManagerRegister = () => {
     }
   }
 
+  const handleGoogleSignup = async () => {
+    setError("")
+    setGoogleLoading(true)
+    try {
+      const companyExists = await checkCompanyExists(companyName)
+      if (!companyExists) {
+        setGoogleLoading(false)
+        return
+      }
+
+      const result = await doSignInWithGoogle()
+      const user = result.user
+      await saveUserData(user, name, phone, user.email, companyName)
+    } catch (error) {
+      console.error("Error signing up with Google:", error.message)
+      setError(error.message || "Failed to sign up with Google. Please try again.")
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
   const handleEmailPasswordSignup = async (e) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !companyName) {
       setError("Please fill in all required fields.")
       setLoading(false)
       return
     }
 
     try {
+      const companyExists = await checkCompanyExists(companyName)
+      if (!companyExists) {
+        setLoading(false)
+        return
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
-      await saveUserData(user, name, phone, email)
+      await saveUserData(user, name, phone, email, companyName)
     } catch (error) {
       console.error("Error registering user:", error.message)
       if (error.code === "auth/email-already-in-use") {
@@ -62,21 +117,6 @@ const SalesManagerRegister = () => {
       }
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleGoogleSignup = async () => {
-    setError("")
-    setGoogleLoading(true)
-    try {
-      const result = await doSignInWithGoogle()
-      const user = result.user
-      await saveUserData(user, name, phone, user.email)
-    } catch (error) {
-      console.error("Error signing up with Google:", error.message)
-      setError(error.message || "Failed to sign up with Google. Please try again.")
-    } finally {
-      setGoogleLoading(false)
     }
   }
 
@@ -128,6 +168,21 @@ const SalesManagerRegister = () => {
         </div>
 
         <form onSubmit={handleEmailPasswordSignup} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+              Company Name *
+            </label>
+            <input
+              type="text"
+              name="companyName"
+              id="companyName"
+              placeholder="Enter your company name"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Full Name *
