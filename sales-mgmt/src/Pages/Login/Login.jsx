@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { doSignInWithEmailAndPassword, doSignInWithGoogle } from "../../firebase/auth"
@@ -49,6 +50,7 @@ const Login = () => {
     try {
       const result = await doSignInWithGoogle()
       console.log("Google sign-in successful:", result.user)
+
     } catch (error) {
       console.error("Error with Google sign-in:", error.message)
       setError(error.message || "Failed to sign in with Google. Please try again.")

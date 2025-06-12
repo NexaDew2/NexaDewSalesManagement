@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header/Header';
 import { db, auth } from '../../firebase/firebase';
@@ -99,11 +100,13 @@ const Home = () => {
     };
 
     const filteredLeads = getFilteredLeads();
+
     const totalLeads = filteredLeads.length;
     const wonLeads = filteredLeads.filter(lead => lead.status === "Won").length;
     const lostLeads = filteredLeads.filter(lead => lead.status === "Lost").length;
     const winPercentage = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
     const lostPercentage = totalLeads > 0 ? Math.round((lostLeads / totalLeads) * 100) : 0;
+
     const recentLeads = filteredLeads.slice(0, 7);
 
     if (loading) {
@@ -117,16 +120,7 @@ const Home = () => {
         );
     }
 
-    if (error) {
-        return (
-            <div className="min-h-screen bg-gray-50">
-                <Header />
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-xl text-red-600">{error}</div>
-                </div>
-            </div>
-        );
-    }
+
     return (
         <>
             <Header />

@@ -224,6 +224,7 @@ const SideBar = forwardRef((props, ref) => {
               </li>
             )}
 
+
             <li className="hover:bg-black w-full hover:text-white p-2 rounded-lg">
               <SignOut />
             </li>

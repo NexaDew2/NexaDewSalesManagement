@@ -1,3 +1,4 @@
+
 import RegisterForm from "../../components/RegisterForm"
 
 const SalesManagerRegister = () => {

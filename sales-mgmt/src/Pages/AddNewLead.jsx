@@ -1,9 +1,11 @@
 "use client"
 
+
 import { useState, useEffect } from "react"
 import Header from "../components/Header/Header"
 import { db } from "../firebase/firebase"
 import { collection, addDoc, doc, getDoc } from "firebase/firestore"
+
 import { useAuthState } from "react-firebase-hooks/auth"
 import { auth } from "../firebase/firebase"
 
@@ -12,7 +14,9 @@ const AddNewLead = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState("")
   const [error, setError] = useState("")
+
   const [userCompany, setUserCompany] = useState("")
+
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,7 +33,8 @@ const AddNewLead = () => {
     timeline: "",
     source: "",
     notes: "",
-    priority: "Medium",
+
+    priority: "Medium",
     status: "New",
   })
 
@@ -64,6 +69,7 @@ const AddNewLead = () => {
     fetchUserCompany()
   }, [user])
 
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -84,6 +90,7 @@ const AddNewLead = () => {
       setLoading(false)
       return
     }
+
 
     if (!userCompany) {
       setError("Unable to determine your company. Please contact support.")
@@ -125,11 +132,13 @@ const AddNewLead = () => {
       })
     } catch (error) {
       console.error("Error adding lead:", error)
+
       if (error.code === "permission-denied") {
         setError("Permission denied. Please ensure you have the necessary permissions to add a lead.")
       } else {
         setError("Failed to add lead. Please try again.")
       }
+
     } finally {
       setLoading(false)
     }
@@ -486,4 +495,6 @@ const AddNewLead = () => {
   )
 }
 
+
 export default AddNewLead
+

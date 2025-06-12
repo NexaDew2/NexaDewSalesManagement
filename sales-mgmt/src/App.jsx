@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -54,11 +55,13 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl">Loading...</div>
       </div>
+
     );
   }
 
@@ -81,6 +84,7 @@ const App = () => {
     return requiredRoles.includes(userRole);
   };
 
+
   return (
     <Router>
       <Routes>
@@ -91,7 +95,6 @@ const App = () => {
         <Route path="/company-owner/register" element={<CompanyOwnerRegister />} />
         <Route path="/share-form/:uid" element={<PublicForm />} /> {/* Public form route */}
 
-        {/* Role selection */}
         <Route
           path="/role-selection"
           element={
@@ -203,6 +206,7 @@ const App = () => {
           }
         />
 
+
         <Route
           path="/generate-form-link"
           element={
@@ -227,5 +231,6 @@ const App = () => {
     </Router>
   );
 };
+
 
 export default App;

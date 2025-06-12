@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header/Header';
+
 import { db, auth } from '../firebase/firebase';
 import { collection, getDocs, query, doc, updateDoc, where, getDoc } from 'firebase/firestore';
 
@@ -13,6 +14,7 @@ const Settings = () => {
   const [newRole, setNewRole] = useState('');
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
+
 
   useEffect(() => {
     fetchEmployees();
@@ -121,7 +123,6 @@ const Settings = () => {
       if (userRole !== 'Company Owner') {
         throw new Error("Only company owners can change roles");
       }
-
       // In your current security rules, role changes aren't allowed
       // You would need to update your rules to allow this
       setError("Role changes are currently disabled");
@@ -216,8 +217,10 @@ const Settings = () => {
                             >
                               Edit
                             </button>
+
                           </td>
                         )}
+
                       </tr>
                     ))}
                   </tbody>

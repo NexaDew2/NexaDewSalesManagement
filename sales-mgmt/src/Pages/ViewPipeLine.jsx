@@ -73,7 +73,6 @@ useEffect(() => {
       setLoading(false)
     }
   }
-
   fetchUserCompanyAndLeads()
 }, [user]) // Removed userCompany from dependency array
 
@@ -203,7 +202,6 @@ const fetchLeads = async (companyName) => {
             {error}
           </div>
         )}
-
         {/* Pipeline Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
           {Object.entries(statusCounts).map(([status, count]) => (
@@ -283,7 +281,6 @@ const fetchLeads = async (companyName) => {
             </div>
           </div>
         )}
-
         {/* Leads Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="menubar">
@@ -437,6 +434,7 @@ const fetchLeads = async (companyName) => {
                           <button
                             className="bg-indigo-500 p-2 rounded-md text-white hover:bg-indigo-600"
                             onClick={() => handleFollowUpClick(lead.id)}
+
                           >
                             Follow-Up
                           </button>
