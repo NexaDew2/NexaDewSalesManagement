@@ -1,76 +1,109 @@
-"use client"
-
 import React, { useState, useEffect } from 'react';
 import Header from '../../components/Header/Header';
-import { db } from '../../firebase/firebase'; 
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase';
+import { collection, getDocs, query, orderBy, where, doc, getDoc } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 const Home = () => {
+    const [user] = useAuthState(auth);
     const [timePeriod, setTimePeriod] = useState('Monthly');
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [userCompany, setUserCompany] = useState('');
 
     useEffect(() => {
-        fetchLeads();
-    }, []);
+        const fetchUserCompanyAndLeads = async () => {
+            if (!user) {
+                setError("Please login to view the dashboard");
+                setLoading(false);
+                return;
+            }
 
-    const fetchLeads = async () => {
-        try {
-            const q = query(collection(db, "leads"), orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
-            const leadsData = querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            setLeads(leadsData);
-        } catch (error) {
-            console.error("Error fetching leads:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            try {
+                // Try to fetch user data from all possible collections
+                const collections = ['marketingManager', 'salesManager', 'companyOwner'];
+                let userData = null;
+                let userCompanyName = '';
+
+                for (const collectionName of collections) {
+                    const userDoc = await getDoc(doc(db, collectionName, user.uid));
+                    if (userDoc.exists()) {
+                        userData = userDoc.data();
+                        userCompanyName = userData.companyName;
+                        break;
+                    }
+                }
+
+                if (!userCompanyName) {
+                    setError("Unable to determine your company. Please contact support.");
+                    setLoading(false);
+                    return;
+                }
+
+                setUserCompany(userCompanyName);
+                await fetchLeads(userCompanyName);
+
+            } catch (err) {
+                console.error("Error fetching user data:", err);
+                setError("Failed to load dashboard data. Please try again.");
+                setLoading(false);
+            }
+        };
+
+        fetchUserCompanyAndLeads();
+    }, [user]);
+
+  const fetchLeads = async (companyName) => {
+  try {
+  const q = query(
+  collection(db, "leads"),
+  where("submittedLead", "==", companyName),
+  orderBy("createdAt", "desc")
+)
+    const querySnapshot = await getDocs(q)
+    const leadsData = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    setLeads(leadsData)
+  } catch (error) {
+    console.error("Error fetching leads:", error)
+    if (error.code === "failed-precondition" && error.message.includes("requires an index")) {
+      setError("Database index is missing. Please contact support to resolve this issue.")
+    } else if (error.code === "permission-denied") {
+      setError("Permission denied. Please ensure you have the necessary permissions to view leads.")
+    } else {
+      setError("Failed to fetch leads. Please try again.")
+    }
+  } finally {
+    setLoading(false)
+  }
+}
 
     // Filter leads based on time period
-    /**
-     * Filters the leads array based on the selected time period (Daily, Weekly, or Monthly).
-     * Only includes leads whose `createdAt` date falls within the specified time range from the current date.
-     *
-     * @function
-     * @returns {Array<Object>} An array of lead objects filtered by the selected time period.
-     *
-     * @example
-     * // Returns leads created within the last 7 days if timePeriod is 'Weekly'
-     * const recentLeads = getFilteredLeads();
-     *
-     * @remarks
-     * - The `timePeriod` variable should be one of: 'Daily', 'Weekly', or 'Monthly'.
-     * - Each lead object is expected to have a `createdAt` property in a format parseable by `Date`.
-     */
     const getFilteredLeads = () => {
+        if (!leads.length) return [];
+
         const now = new Date();
         const timeRanges = {
-            Daily: 1 * 24 * 60 * 60 * 1000, // 1 day in milliseconds
-            Weekly: 7 * 24 * 60 * 60 * 1000, // 7 days
+            Daily: 1 * 24 * 60 * 60 * 1000,    // 1 day in milliseconds
+            Weekly: 7 * 24 * 60 * 60 * 1000,   // 7 days
             Monthly: 30 * 24 * 60 * 60 * 1000, // 30 days
         };
-        const timeRange = timeRanges[timePeriod];
 
         return leads.filter((lead) => {
-            const createdAt = new Date(lead.createdAt); 
-            return now - createdAt <= timeRange;
+            const createdAt = lead.createdAt?.toDate?.() || new Date(lead.createdAt);
+            return now - createdAt <= timeRanges[timePeriod];
         });
     };
 
     const filteredLeads = getFilteredLeads();
-
-    // Calculate win/lost percentages
     const totalLeads = filteredLeads.length;
     const wonLeads = filteredLeads.filter(lead => lead.status === "Won").length;
     const lostLeads = filteredLeads.filter(lead => lead.status === "Lost").length;
     const winPercentage = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 0;
     const lostPercentage = totalLeads > 0 ? Math.round((lostLeads / totalLeads) * 100) : 0;
-
-    // For the Incoming Leads section, limit to the most recent 7 leads
     const recentLeads = filteredLeads.slice(0, 7);
 
     if (loading) {
@@ -84,6 +117,16 @@ const Home = () => {
         );
     }
 
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-xl text-red-600">{error}</div>
+                </div>
+            </div>
+        );
+    }
     return (
         <>
             <Header />
